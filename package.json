@@ -1,6 +1,6 @@
 {
   "name": "@mxyhi/tsgo",
-  "version": "2025.5.28-18",
+  "version": "2025.5.29-0",
   "description": "typescript-go npm release(unofficial)",
   "type": "module",
   "bin": {
