@@ -1,11 +1,12 @@
-import { chmodSync } from 'node:fs'
+import { chmodSync, constants } from 'node:fs'
 import path, { join } from 'node:path'
-import { mkdir, writeFile } from 'node:fs/promises'
+import process, { env } from 'node:process'
+import { mkdir, writeFile, copyFile } from 'node:fs/promises'
 import json from './package.json' with { type: 'json' }
 import { fileURLToPath } from 'node:url'
 import { pathExists } from 'path-exists'
 
-const scopeGithubName = "mxyhi";
+let scopeGithubName = "mxyhi";
 
 const platform = process.platform
 const arch = process.arch
@@ -28,6 +29,10 @@ const ext = platform === 'win32' ? '.exe' : ''
 
 const binaryName = `tsgo-${platformMap[platform]}-${archMap[arch]}${ext}`
 
+if (env.TSGO_PROVIDER) {
+  scopeGithubName = env.TSGO_PROVIDER
+}
+
 const downloadUrl = `https://github.com/${scopeGithubName}/tsgo-npm-release/releases/download/v${json.version}/${binaryName}`
 
 const binDir = join(path.dirname(fileURLToPath(import.meta.url)), 'bin')
@@ -41,6 +46,24 @@ if (await pathExists(binaryPath)) {
 }
 
 async function download() {
+  if (env.TSGO_DIRECTORY) {
+    const filePath = join(env.TSGO_DIRECTORY, 'built', 'local', `tsgo${ext}`)
+
+    if (existsSync(filePath)) {
+      try {
+        await copyFile(filePath, binaryPath, constants.COPYFILE_EXCL)
+
+        if (platform !== 'win32') {
+          await chmod(binaryPath, 0o755)
+        }
+
+        process.exit(0);
+      } catch (error) {
+        console.error(`Copy file failed: ${error.message}`)
+      }
+    }
+  }
+
   console.log(
     `Downloading binary file for ${platformMap[platform]}-${archMap[arch]}...`,
   )
